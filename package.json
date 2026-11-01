@@ -1,0 +1,47 @@
+{
+  "name": "codex-weixin-cli",
+  "version": "0.5.1",
+  "description": "Independent Weixin messaging channel for the local Codex App Server",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "bin": {
+    "codex-weixin": "bin/codex-weixin.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "SECURITY.md",
+    "docs/CLI.md",
+    "docs/ARCHITECTURE.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check bin/codex-weixin.js && node --test test/*.test.js",
+    "release:check": "node scripts/check-release.mjs"
+  },
+  "dependencies": {
+    "qrcode-terminal": "0.12.0",
+    "ws": "8.22.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uk0/codex-weixin.git"
+  },
+  "homepage": "https://github.com/uk0/codex-weixin#readme",
+  "bugs": {
+    "url": "https://github.com/uk0/codex-weixin/issues"
+  },
+  "keywords": [
+    "codex",
+    "weixin",
+    "wechat",
+    "cli",
+    "bridge"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Weixin CDN upload client subset",
+    "version": "0.3.0",
+    "description": "Tencent client behavior snapshot; uploads encrypted bytes without bot credentials. Not a full server contract."
+  },
+  "servers": [
+    {
+      "url": "https://novac2c.cdn.weixin.qq.com/c2c"
+    }
+  ],
+  "paths": {
+    "/upload": {
+      "post": {
+        "parameters": [
+          {
+            "name": "encrypted_query_param",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filekey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Encrypted bytes accepted",
+            "headers": {
+              "x-encrypted-param": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Required nonempty download parameter"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload"
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "500": {
+            "description": "Upstream failure"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+// Optional --live-model uses a dedicated real daemon/model thread; Weixin/CDN stay mocked.
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
+import { Store } from '../lib/store.js';
+import { CodexClient } from '../lib/codex.js';
+import { SessionController } from '../lib/sessions.js';
+import { Bridge } from '../lib/bridge.js';
+import { WeixinClient } from '../lib/weixin.js';
+const base = process.argv[2]; assert.match(base || '', /^http:\/\/127\.0\.0\.1:\d+$/);
+const live = process.argv.includes('--live-model');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-channel-e2e-'));
+const workspace = path.join(root, 'workspace'); fs.mkdirSync(workspace);
+fs.writeFileSync(path.join(workspace, '通道测试.txt'), 'channel tool delivery proof\n');
+const store = new Store(path.join(root, 'state'));
+const config = { workspace, sandbox: 'read-only', allowUsers: ['owner'] };
+const client = new CodexClient(live ? { endpoint: 'unix://', interactive: true, turnTimeoutMs: 180000 } : { command: process.execPath, args: [fileURLToPath(new URL('./fixtures/fake-tool-codex.js', import.meta.url))], cwd: workspace, interactive: true });
+const weixin = new WeixinClient({ baseUrl: base + '/weixin', cdnBaseUrl: base + '/cdn', token: 'dummy-token', allowLocal: true });
+const bridge = new Bridge({ store, config, account: { botId: 'bot' }, weixin });
+const receipts = []; const requests = [];
+const controller = new SessionController({ store, config, backends: new Map([['local', { client }]]), publish: (r, text) => bridge.queueReply(r, text), sendAction: async (r, p) => { requests.push({ tool: p.type, path: p.path, originCorrect: r.sender === 'owner' }); const receipt = await bridge.sendAction(r, p); receipts.push(receipt); return receipt; } });
+bridge.controller = controller;
+const control = async body => { const r = await fetch(base + '/weixin/__control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); assert.equal(r.status, 200); };
+let pump; const deliveryErrors = []; let message = 0;
+try {
+  await control({ reset: true, failFileOnce: !live });
+  const uploadBaseline = (await (await fetch(base + '/cdn/__state')).json()).uploads.length;
+  await client.connect();
+  const step = async text => { await control({ messages: [{ message_id: ++message, message_type: 1, message_state: 2, from_user_id: 'owner', context_token: 'test-context', item_list: [{ type: 1, text_item: { text } }] }] }); await bridge.pollOnce(); };
+  pump = setInterval(() => bridge.flushOutbox().catch(e => deliveryErrors.push(e.status || 'error')), 100);
+  await step('/new');
+  await step('请把当前目录的 通道测试.txt 文件发给我确认。发送后简短回复。');
+  // The turn's tool response must await the HTTP send, not just queue creation.
+  while (controller.jobs.size || controller.background.size) await delay(100);
+  await bridge.flushOutbox();
+  const state = await (await fetch(base + '/weixin/__state')).json();
+  const cdn = await (await fetch(base + '/cdn/__state')).json();
+  const files = state.replies.filter(r => r.item_list[0].type === 4);
+  const newUploads = cdn.uploads.slice(uploadBaseline);
+  assert.equal(files.length, 1); assert.equal(newUploads.length, 1);
+  assert.equal(newUploads[0].authorizationAbsent, true);
+  assert(requests.some(r => r.path?.endsWith('通道测试.txt') && r.originCorrect));
+  assert(receipts.some(r => r.accepted && !r.userConfirmed));
+  const texts = state.replies.filter(r => r.item_list[0].type === 1).map(r => r.item_list[0].text_item.text);
+  assert(!texts.some(t => t.includes('SHA256') || t.includes('[[weixin-file:') || t.includes('执行：') || t.includes('已接收任务')));
+  if (!live) assert(deliveryErrors.includes(500));
+  const report = { result: 'PASS', environment: live ? 'real Codex shared daemon + real model; Postman Weixin/CDN stand-ins' : 'fake Codex subprocess; Postman Weixin/CDN stand-ins', threadId: controller.peer({ peer: Object.keys(controller.state.peers)[0] }).selected.threadId, actualDynamicToolCalls: requests, fileMessages: files.length, encryptedUploads: newUploads.length, toolReceiptAccepted: true, simulated500Recovered: !live, realWeixinDelivery: false, nativeSandbox: 'read-only', textMessages: texts.length };
+  fs.mkdirSync('artifacts/channel-tools', { recursive: true }); fs.writeFileSync(`artifacts/channel-tools/${live ? 'live-model' : 'simulation'}.json`, JSON.stringify(report, null, 2)); console.log(JSON.stringify(report, null, 2));
+} finally { if (pump) clearInterval(pump); controller.close(); client.close(); fs.rmSync(root, { recursive: true, force: true }); }

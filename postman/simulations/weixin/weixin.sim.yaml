@@ -1,0 +1,11 @@
+simulation: weixin-codex-local
+routing: path
+mocks:
+  - name: weixin
+    routeKey: weixin
+    origin: ilinkai.weixin.qq.com
+    path: postman/mocks/weixin
+  - name: weixin-cdn
+    routeKey: cdn
+    origin: novac2c.cdn.weixin.qq.com
+    path: postman/mocks/weixin-cdn

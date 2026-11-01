@@ -1,0 +1,15 @@
+version: 1
+name: weixin
+slug: weixin
+protocol: http
+interceptRequests: true
+origin: ilinkai.weixin.qq.com
+port: 4500
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
+generatedFrom:
+  type: spec
+  mode: static
+  path: ../../../docs/weixin.openapi.json

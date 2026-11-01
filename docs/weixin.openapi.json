@@ -1,0 +1,592 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Weixin bot client protocol subset",
+    "version": "0.1.0",
+    "description": "Client expectations derived from Tencent/openclaw-weixin revision 874637a0dbc24050f72d1385add4fc6170a2d726 docs/protocol.md. Not an exhaustive server contract or proof of third-party-client eligibility."
+  },
+  "servers": [
+    {
+      "url": "https://ilinkai.weixin.qq.com"
+    }
+  ],
+  "paths": {
+    "/ilink/bot/get_bot_qrcode": {
+      "post": {
+        "summary": "Request login QR code",
+        "responses": {
+          "200": {
+            "description": "Client protocol snapshot; not a verified exhaustive server contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "qrcode": {
+                      "type": "string"
+                    },
+                    "qrcode_img_content": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "qrcode": "test-qr",
+                  "qrcode_img_content": "https://example.invalid/weixin-qr"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "HTTP rate limit"
+          },
+          "500": {
+            "description": "Upstream HTTP failure"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "local_token_list": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "local_token_list"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "bot_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "3"
+          }
+        ]
+      }
+    },
+    "/ilink/bot/get_qrcode_status": {
+      "get": {
+        "summary": "Poll QR status",
+        "responses": {
+          "200": {
+            "description": "Client protocol snapshot; not a verified exhaustive server contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "bot_token": {
+                      "type": "string"
+                    },
+                    "ilink_bot_id": {
+                      "type": "string"
+                    },
+                    "ilink_user_id": {
+                      "type": "string"
+                    },
+                    "baseurl": {
+                      "type": "string"
+                    },
+                    "redirect_host": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "confirmed",
+                  "bot_token": "dummy-token",
+                  "ilink_bot_id": "bot",
+                  "ilink_user_id": "owner",
+                  "baseurl": "https://ilinkai.weixin.qq.com"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "HTTP rate limit"
+          },
+          "500": {
+            "description": "Upstream HTTP failure"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "qrcode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verify_code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/ilink/bot/getupdates": {
+      "post": {
+        "summary": "Poll inbound messages",
+        "responses": {
+          "200": {
+            "description": "Client protocol snapshot; not a verified exhaustive server contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ret": {
+                      "type": "integer"
+                    },
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "msgs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from_user_id": {
+                            "type": "string"
+                          },
+                          "to_user_id": {
+                            "type": "string"
+                          },
+                          "client_id": {
+                            "type": "string"
+                          },
+                          "message_type": {
+                            "type": "integer"
+                          },
+                          "message_state": {
+                            "type": "integer"
+                          },
+                          "context_token": {
+                            "type": "string"
+                          },
+                          "item_list": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "integer"
+                                },
+                                "text_item": {
+                                  "type": "object",
+                                  "properties": {
+                                    "text": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "text"
+                                  ]
+                                },
+                                "file_item": {
+                                  "type": "object",
+                                  "properties": {
+                                    "file_name": {
+                                      "type": "string"
+                                    },
+                                    "len": {
+                                      "type": "string"
+                                    },
+                                    "media": {
+                                      "type": "object",
+                                      "properties": {
+                                        "encrypt_query_param": {
+                                          "type": "string"
+                                        },
+                                        "aes_key": {
+                                          "type": "string"
+                                        },
+                                        "encrypt_type": {
+                                          "type": "integer",
+                                          "enum": [
+                                            1
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "encrypt_query_param",
+                                        "aes_key",
+                                        "encrypt_type"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "file_name",
+                                    "len",
+                                    "media"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "type"
+                              ]
+                            }
+                          },
+                          "message_id": {
+                            "type": "integer"
+                          },
+                          "seq": {
+                            "type": "integer"
+                          },
+                          "group_id": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "get_updates_buf": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "ret": 0,
+                  "msgs": [],
+                  "get_updates_buf": "next"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "HTTP rate limit"
+          },
+          "500": {
+            "description": "Upstream HTTP failure"
+          }
+        },
+        "security": [
+          {
+            "botToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "get_updates_buf": {
+                    "type": "string"
+                  },
+                  "base_info": {
+                    "type": "object",
+                    "properties": {
+                      "channel_version": {
+                        "type": "string"
+                      },
+                      "bot_agent": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "channel_version",
+                      "bot_agent"
+                    ]
+                  }
+                },
+                "required": [
+                  "get_updates_buf",
+                  "base_info"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ilink/bot/sendmessage": {
+      "post": {
+        "summary": "Reply with inbound context token",
+        "responses": {
+          "200": {
+            "description": "Client protocol snapshot; not a verified exhaustive server contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ret": {
+                      "type": "integer"
+                    },
+                    "errmsg": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "ret": 0
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "HTTP rate limit"
+          },
+          "500": {
+            "description": "Upstream HTTP failure"
+          }
+        },
+        "security": [
+          {
+            "botToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "msg": {
+                    "type": "object",
+                    "properties": {
+                      "from_user_id": {
+                        "type": "string"
+                      },
+                      "to_user_id": {
+                        "type": "string"
+                      },
+                      "client_id": {
+                        "type": "string"
+                      },
+                      "message_type": {
+                        "type": "integer"
+                      },
+                      "message_state": {
+                        "type": "integer"
+                      },
+                      "context_token": {
+                        "type": "string"
+                      },
+                      "item_list": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "integer"
+                            },
+                            "text_item": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "text"
+                              ]
+                            },
+                            "file_item": {
+                              "type": "object",
+                              "properties": {
+                                "file_name": {
+                                  "type": "string"
+                                },
+                                "len": {
+                                  "type": "string"
+                                },
+                                "media": {
+                                  "type": "object",
+                                  "properties": {
+                                    "encrypt_query_param": {
+                                      "type": "string"
+                                    },
+                                    "aes_key": {
+                                      "type": "string"
+                                    },
+                                    "encrypt_type": {
+                                      "type": "integer",
+                                      "enum": [
+                                        1
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "encrypt_query_param",
+                                    "aes_key",
+                                    "encrypt_type"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "file_name",
+                                "len",
+                                "media"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      },
+                      "message_id": {
+                        "type": "integer"
+                      },
+                      "seq": {
+                        "type": "integer"
+                      },
+                      "group_id": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "base_info": {
+                    "type": "object",
+                    "properties": {
+                      "channel_version": {
+                        "type": "string"
+                      },
+                      "bot_agent": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "channel_version",
+                      "bot_agent"
+                    ]
+                  }
+                },
+                "required": [
+                  "msg",
+                  "base_info"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ilink/bot/getuploadurl": {
+      "post": {
+        "summary": "Request file upload parameters (client protocol subset)",
+        "security": [
+          {
+            "botToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filekey": {
+                    "type": "string"
+                  },
+                  "media_type": {
+                    "type": "integer",
+                    "enum": [
+                      3
+                    ]
+                  },
+                  "to_user_id": {
+                    "type": "string"
+                  },
+                  "rawsize": {
+                    "type": "integer"
+                  },
+                  "rawfilemd5": {
+                    "type": "string"
+                  },
+                  "filesize": {
+                    "type": "integer"
+                  },
+                  "no_need_thumb": {
+                    "type": "boolean"
+                  },
+                  "aeskey": {
+                    "type": "string"
+                  },
+                  "base_info": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "filekey",
+                  "media_type",
+                  "to_user_id",
+                  "rawsize",
+                  "rawfilemd5",
+                  "filesize",
+                  "no_need_thumb",
+                  "aeskey",
+                  "base_info"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider upload target (prefer upload_full_url; fallback upload_param)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ret": {
+                      "type": "integer"
+                    },
+                    "upload_full_url": {
+                      "type": "string"
+                    },
+                    "upload_param": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit"
+          },
+          "500": {
+            "description": "Upstream failure"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "botToken": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

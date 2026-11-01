@@ -1,0 +1,11 @@
+version: 1
+name: weixin-cdn
+slug: weixin-cdn
+protocol: http
+port: 4501
+interceptRequests: false
+origin: novac2c.cdn.weixin.qq.com
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

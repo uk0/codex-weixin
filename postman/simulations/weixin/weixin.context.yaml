@@ -1,0 +1,46 @@
+# Public, sanitized handoff. The original local deployment records are not distributed.
+purpose:
+  stands_in_for: Tencent Weixin iLink bot HTTP client protocol subset; not a production service guarantee.
+  unblocks: Local bridge behavior and fault-path verification without real credentials or model calls.
+assumptions:
+  - id: request-wire-shapes
+    status: supported
+    claim: The upstream client sends QR POST, QR status GET, and authenticated getupdates/sendmessage with the modeled fields.
+    reason: Historical protocol and request-builder inspection supports the client shape, not all server requirements.
+    verification: The 2026-10-30 baseline inspected the upstream revision below and exercised dummy HTTP requests. Public 0.5.1 tests retain request serialization and QR checks; no new upstream guarantee is inferred.
+    source: docs/weixin.openapi.json; postman/mocks/weixin/default.js; test/core.test.js
+    updated_at: '2026-11-01'
+  - id: send-client-id-idempotency
+    status: unknown
+    claim: Reusing client_id after an ambiguous send timeout prevents duplicate visible replies on the real service.
+    reason: The public client protocol does not establish server deduplication after an ambiguous write; failure-before-write mocks cannot establish it.
+    verification: Historical restart tests retained client_id. On 2026-11-01 the public channel simulation again recovered a 500-before-write with one encrypted upload and one accepted file message. No real timeout-after-write experiment was performed.
+    source: lib/bridge.js; test/core.test.js; test/channel-simulation.js; postman/mocks/weixin/default.js
+    updated_at: '2026-11-01'
+  - id: third-party-client-eligibility
+    status: unknown
+    claim: The real Weixin service accepts this independent client for a new user's account.
+    reason: Public client code and observations from a particular development account are not a general eligibility or continued-compatibility promise.
+    verification: Initial 2026-10-30 checks consumed stand-in QR responses only. Later development observed account-specific traffic, which does not settle general eligibility. This public release run used only fake identities and HTTP stand-ins.
+    source: docs/TESTING.md; test/core.test.js; lib/login.js
+    updated_at: '2026-11-01'
+  - id: markdown-wire-and-file-tool
+    status: supported
+    claim: The tested bridge preserves standalone Markdown commands and awaits file-message acceptance under the committed mock scenarios.
+    reason: Real bridge code and HTTP serialization were exercised against the protocol stand-ins, rather than stubbing the HTTP client.
+    verification: On 2026-11-01 message-style simulation passed 13 inbound messages and 14 text replies with explicit-only confirmation and approval. Channel simulation passed one accepted encrypted attachment and recovery from one HTTP 500. This does not prove recipient rendering, copy behavior, download or real-service idempotency.
+    source: test/message-style-simulation.js; test/channel-simulation.js; docs/TESTING.md
+    updated_at: '2026-11-01'
+fingerprints:
+  - id: initial-local-mvp
+    date: '2026-10-30'
+    commit: 'Pre-public history; upstream Tencent protocol revision 874637a0dbc24050f72d1385add4fc6170a2d726.'
+    cli: 'Postman 1.82.0; Codex 0.166.0; Node v25.6.1'
+  - id: public-preview-validation
+    date: '2026-11-01'
+    commit: 'Initial public v0.5.1 candidate before first commit; production JavaScript unchanged from local 0.5.1.'
+    cli: 'Postman 1.82.0; Node v25.6.1; fake Codex backend only'
+# Earlier synthetic checks covered cursor replay, restart-safe uploads, bounded approvals,
+# steer/interrupt and Markdown links. Development also ran dedicated real-model checks,
+# including web search, but their private logs and live-account scripts are not distributed.
+# None established recipient-side visual rendering/download or generic provider eligibility.
